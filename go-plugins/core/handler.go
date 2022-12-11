@@ -24,7 +24,7 @@ func NewHandler() Handler {
 		fmt.Fprintf(w, "pong")
 	})
 
-	mux.HandleFunc(pat.Get(Prestop), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(pat.Get(PrestopPath), func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", DefaultContentType)
 		w.WriteHeader(http.StatusOK)
 	})

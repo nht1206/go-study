@@ -1,8 +1,8 @@
 package core
 
 const (
-	PingPath = "/ping"
-	Prestop  = "/prestop"
+	PingPath    = "/ping"
+	PrestopPath = "/prestop"
 )
 
 const (
