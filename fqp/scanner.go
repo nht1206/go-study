@@ -10,6 +10,7 @@ import (
 
 const (
 	eof = rune(0)
+	dot = rune('.')
 )
 
 var (
@@ -137,6 +138,9 @@ func (s *Scanner) scanWhitespaces() *Token {
 
 func (s *Scanner) scanIdentifier() *Token {
 	var buf bytes.Buffer
+	identifierStart := s.read()
+	buf.WriteRune(identifierStart)
+
 	for {
 		ch := s.read()
 
@@ -144,7 +148,7 @@ func (s *Scanner) scanIdentifier() *Token {
 			break
 		}
 
-		if !isLetterRune(ch) && !isDigitRune(ch) {
+		if !isLetterRune(ch) && !isDigitRune(ch) && ch != dot {
 			s.unread()
 			break
 		}
@@ -168,6 +172,7 @@ func (s *Scanner) scanText() *Token {
 	buf.WriteRune(quoteCh)
 	var prevCh rune
 	hasCloseQuote := false
+
 	for {
 		ch := s.read()
 
@@ -198,8 +203,8 @@ func (s *Scanner) scanText() *Token {
 
 func (s *Scanner) scanNumber() *Token {
 	var buf bytes.Buffer
-	ch := s.read()
 
+	ch := s.read()
 	if isNumberStart(ch) {
 		buf.WriteRune(ch)
 	}
@@ -224,6 +229,7 @@ func (s *Scanner) scanNumber() *Token {
 
 func (s *Scanner) scanOperator() *Token {
 	var buf bytes.Buffer
+
 	for {
 		ch := s.read()
 
@@ -244,6 +250,7 @@ func (s *Scanner) scanOperator() *Token {
 
 func (s *Scanner) scanJoin() *Token {
 	var buf bytes.Buffer
+
 	for {
 		ch := s.read()
 
@@ -263,6 +270,7 @@ func (s *Scanner) scanJoin() *Token {
 }
 
 func (s *Scanner) read() rune {
+
 	r, _, err := s.r.ReadRune()
 	if err != nil {
 		if err == io.EOF {
@@ -276,9 +284,11 @@ func (s *Scanner) read() rune {
 
 func (s *Scanner) scanGroup() *Token {
 	var buf bytes.Buffer
+
 	startGroup := s.read()
 	buf.WriteRune(startGroup)
 	hasEndGroup := false
+
 	for {
 		ch := s.read()
 

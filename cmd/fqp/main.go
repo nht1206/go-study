@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	scan("(a == 1 && b == 2) || c == 3")
+	scan("@request.auth.id != \"\" && (status = \"active\" || status = \"pending\")")
 }
 
 func scan(query string) {
