@@ -285,8 +285,8 @@ func (s *Scanner) read() rune {
 func (s *Scanner) scanGroup() *Token {
 	var buf bytes.Buffer
 
-	startGroup := s.read()
-	buf.WriteRune(startGroup)
+	// Skip the group start rune
+	s.read()
 	hasEndGroup := false
 
 	for {
@@ -296,11 +296,12 @@ func (s *Scanner) scanGroup() *Token {
 			break
 		}
 
-		buf.WriteRune(ch)
 		if s.isGroupEnd(ch) {
 			hasEndGroup = true
 			break
 		}
+
+		buf.WriteRune(ch)
 	}
 
 	literal := buf.String()

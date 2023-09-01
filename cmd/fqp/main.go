@@ -18,7 +18,7 @@ func scan(query string) {
 		t := s.Scan()
 		if t.Type == fqp.TokenGroup {
 			log.Println("group: ", t.Literal, "-----")
-			scan(t.Literal[1 : len(t.Literal)-1])
+			scan(t.Literal)
 			log.Println("endgroup------")
 			continue
 		}
