@@ -1,4 +1,4 @@
-package fqp
+package tokenizer
 
 import (
 	"bufio"
@@ -14,16 +14,35 @@ const (
 )
 
 var (
-	defaultWhitespaces     = []rune(` \t\n`)
-	defaultIdentifierStart = []rune(`@_#`)
-	defaultTextStart       = []rune(`'"`)
-	defaultOperator        = []rune(`=?!><~`)
-	defaultJoin            = []rune(`&|`)
-	defaultGroupStart      = []rune(`(`)
-	defaultGroupEnd        = []rune(`)`)
+	defaultWhitespaces          = []rune(" \t\n")
+	defaultIdentifierStartRunes = []rune(`@_#`)
+	defaultTextStartRunes       = []rune(`'"`)
+	defaultOperatorStartRunes   = []rune(`=?!><~`)
+	defaultJoinStartRunes       = []rune(`&|`)
+	defaultGroupStartRunes      = []rune(`(`)
+	defaultGroupEndRunes        = []rune(`)`)
 )
 
-type Scanner struct {
+type TokenType string
+
+const (
+	TokenWhiteSpace  TokenType = "whitespace"
+	TokenText        TokenType = "text"
+	TokenNumber      TokenType = "number"
+	TokenIdentifier  TokenType = "identifier"
+	TokenOperator    TokenType = "operator"
+	TokenJoin        TokenType = "join"
+	TokenGroup       TokenType = "group"
+	TokenEOF         TokenType = "eof"
+	TokenUnsupported TokenType = "unsupported"
+)
+
+type Token struct {
+	Type    TokenType
+	Literal string
+}
+
+type Tokenizer struct {
 	r               *bufio.Reader
 	nextToken       *Token
 	whiteSpaces     []rune
@@ -36,20 +55,20 @@ type Scanner struct {
 	Err             error
 }
 
-func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{
+func NewTokenizer(r io.Reader) *Tokenizer {
+	return &Tokenizer{
 		r:               bufio.NewReader(r),
 		whiteSpaces:     defaultWhitespaces,
-		identifierStart: defaultIdentifierStart,
-		textStart:       defaultTextStart,
-		operator:        defaultOperator,
-		join:            defaultJoin,
-		groupStart:      defaultGroupStart,
-		groupEnd:        defaultGroupEnd,
+		identifierStart: defaultIdentifierStartRunes,
+		textStart:       defaultTextStartRunes,
+		operator:        defaultOperatorStartRunes,
+		join:            defaultJoinStartRunes,
+		groupStart:      defaultGroupStartRunes,
+		groupEnd:        defaultGroupEndRunes,
 	}
 }
 
-func (s *Scanner) HasNext() bool {
+func (s *Tokenizer) HasNext() bool {
 	if s.nextToken != nil {
 		return true
 	}
@@ -59,7 +78,7 @@ func (s *Scanner) HasNext() bool {
 	return s.nextToken.Type != TokenEOF && s.Err == nil
 }
 
-func (s *Scanner) Scan() *Token {
+func (s *Tokenizer) Scan() *Token {
 	if s.nextToken == nil {
 		return s.scan()
 	}
@@ -71,7 +90,7 @@ func (s *Scanner) Scan() *Token {
 	return s.nextToken
 }
 
-func (s *Scanner) scan() *Token {
+func (s *Tokenizer) scan() *Token {
 	ch := s.read()
 
 	if ch == eof {
@@ -116,7 +135,7 @@ func (s *Scanner) scan() *Token {
 	return &Token{Type: TokenUnsupported, Literal: string(ch)}
 }
 
-func (s *Scanner) scanWhitespaces() *Token {
+func (s *Tokenizer) scanWhitespaces() *Token {
 	var buf bytes.Buffer
 	for {
 		ch := s.read()
@@ -136,7 +155,7 @@ func (s *Scanner) scanWhitespaces() *Token {
 	return &Token{Type: TokenWhiteSpace, Literal: buf.String()}
 }
 
-func (s *Scanner) scanIdentifier() *Token {
+func (s *Tokenizer) scanIdentifier() *Token {
 	var buf bytes.Buffer
 	identifierStart := s.read()
 	buf.WriteRune(identifierStart)
@@ -165,7 +184,7 @@ func (s *Scanner) scanIdentifier() *Token {
 	return &Token{Type: TokenIdentifier, Literal: literal}
 }
 
-func (s *Scanner) scanText() *Token {
+func (s *Tokenizer) scanText() *Token {
 	var buf bytes.Buffer
 
 	quoteCh := s.read()
@@ -201,7 +220,7 @@ func (s *Scanner) scanText() *Token {
 	return &Token{Type: TokenText, Literal: literal}
 }
 
-func (s *Scanner) scanNumber() *Token {
+func (s *Tokenizer) scanNumber() *Token {
 	var buf bytes.Buffer
 
 	ch := s.read()
@@ -227,7 +246,7 @@ func (s *Scanner) scanNumber() *Token {
 	return &Token{Type: TokenNumber, Literal: buf.String()}
 }
 
-func (s *Scanner) scanOperator() *Token {
+func (s *Tokenizer) scanOperator() *Token {
 	var buf bytes.Buffer
 
 	for {
@@ -248,7 +267,7 @@ func (s *Scanner) scanOperator() *Token {
 	return &Token{Type: TokenOperator, Literal: buf.String()}
 }
 
-func (s *Scanner) scanJoin() *Token {
+func (s *Tokenizer) scanJoin() *Token {
 	var buf bytes.Buffer
 
 	for {
@@ -266,10 +285,10 @@ func (s *Scanner) scanJoin() *Token {
 		buf.WriteRune(ch)
 	}
 
-	return &Token{Type: TokenOperator, Literal: buf.String()}
+	return &Token{Type: TokenJoin, Literal: buf.String()}
 }
 
-func (s *Scanner) read() rune {
+func (s *Tokenizer) read() rune {
 
 	r, _, err := s.r.ReadRune()
 	if err != nil {
@@ -282,7 +301,7 @@ func (s *Scanner) read() rune {
 	return r
 }
 
-func (s *Scanner) scanGroup() *Token {
+func (s *Tokenizer) scanGroup() *Token {
 	var buf bytes.Buffer
 
 	// Skip the group start rune
@@ -313,34 +332,34 @@ func (s *Scanner) scanGroup() *Token {
 	return &Token{Type: TokenGroup, Literal: literal}
 }
 
-func (s *Scanner) unread() error {
+func (s *Tokenizer) unread() error {
 	return s.r.UnreadRune()
 }
 
-func (s *Scanner) isWhitespace(ch rune) bool {
+func (s *Tokenizer) isWhitespace(ch rune) bool {
 	return existInSlice(ch, s.whiteSpaces)
 }
 
-func (s *Scanner) isIdentifierStart(ch rune) bool {
+func (s *Tokenizer) isIdentifierStart(ch rune) bool {
 	return isLetterRune(ch) || existInSlice(ch, s.identifierStart)
 }
 
-func (s *Scanner) isTextStart(ch rune) bool {
+func (s *Tokenizer) isTextStart(ch rune) bool {
 	return existInSlice(ch, s.textStart)
 }
 
-func (s *Scanner) isOperator(ch rune) bool {
+func (s *Tokenizer) isOperator(ch rune) bool {
 	return existInSlice(ch, s.operator)
 }
 
-func (s *Scanner) isJoin(ch rune) bool {
+func (s *Tokenizer) isJoin(ch rune) bool {
 	return existInSlice(ch, s.join)
 }
 
-func (s *Scanner) isGroupStart(ch rune) bool {
+func (s *Tokenizer) isGroupStart(ch rune) bool {
 	return existInSlice(ch, s.groupStart)
 }
 
-func (s *Scanner) isGroupEnd(ch rune) bool {
+func (s *Tokenizer) isGroupEnd(ch rune) bool {
 	return existInSlice(ch, s.groupEnd)
 }

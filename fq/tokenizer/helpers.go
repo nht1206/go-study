@@ -1,4 +1,4 @@
-package fqp
+package tokenizer
 
 import "regexp"
 
@@ -28,13 +28,4 @@ var identifierRegex = regexp.MustCompile(`^[\@\#\_]?[\w\.\:]*\w+$`)
 
 func isIdentifier(literal string) bool {
 	return identifierRegex.MatchString(literal)
-}
-
-func isJoin(literal string) bool {
-	switch literal {
-	case "&&", "||":
-		return true
-	default:
-		return false
-	}
 }
