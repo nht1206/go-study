@@ -78,7 +78,7 @@ func Parse(filterQuery string) ([]ExprGroup, error) {
 		}
 
 		if t.Type == tokenizer.TokenUnsupported {
-			return nil, errors.New("unexpected character found")
+			return nil, fmt.Errorf("unexpected character found %q", t.Literal)
 		}
 
 		if t.Type == tokenizer.TokenGroup {
@@ -137,6 +137,10 @@ func Parse(filterQuery string) ([]ExprGroup, error) {
 			step = stepBeforeSign
 			continue
 		}
+	}
+
+	if s.Err != nil {
+		return nil, s.Err
 	}
 
 	if step != stepJoin {
