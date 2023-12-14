@@ -306,7 +306,7 @@ func (s *Tokenizer) scanGroup() *Token {
 
 	// Skip the group start rune
 	s.read()
-	hasEndGroup := false
+	groupCount := 1
 
 	for {
 		ch := s.read()
@@ -315,8 +315,15 @@ func (s *Tokenizer) scanGroup() *Token {
 			break
 		}
 
+		if s.isGroupStart(ch) {
+			groupCount++
+		}
+
 		if s.isGroupEnd(ch) {
-			hasEndGroup = true
+			groupCount--
+		}
+
+		if groupCount == 0 {
 			break
 		}
 
@@ -325,7 +332,7 @@ func (s *Tokenizer) scanGroup() *Token {
 
 	literal := buf.String()
 
-	if !hasEndGroup {
+	if groupCount != 0 {
 		s.Err = fmt.Errorf("invalid group %q", literal)
 	}
 
