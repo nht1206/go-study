@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nht1206/go-study/fq/list"
 	"github.com/nht1206/go-study/fq/tokenizer"
 )
 
@@ -107,7 +108,7 @@ func Parse(filterQuery string) ([]ExprGroup, error) {
 			continue
 		case stepSign:
 			sign := SignOp(t.Literal)
-			if t.Type != tokenizer.TokenOperator || !existInSlice(SignOps, sign) {
+			if t.Type != tokenizer.TokenOperator || !list.ExistInSlice(SignOps, sign) {
 				return nil, fmt.Errorf("non deterministic sign operator %q", t.Literal)
 			}
 			expr.Op = sign
@@ -128,7 +129,7 @@ func Parse(filterQuery string) ([]ExprGroup, error) {
 			continue
 		case stepJoin:
 			join = JoinOp(t.Literal)
-			if t.Type != tokenizer.TokenJoin || !existInSlice(JoinOps, join) {
+			if t.Type != tokenizer.TokenJoin || !list.ExistInSlice(JoinOps, join) {
 				return nil, fmt.Errorf("non deterministic join operator %q (%s)", t.Literal, t.Type)
 			}
 
@@ -143,14 +144,4 @@ func Parse(filterQuery string) ([]ExprGroup, error) {
 	}
 
 	return result, nil
-}
-
-func existInSlice[T comparable](s []T, v T) bool {
-	for _, e := range s {
-		if e == v {
-			return true
-		}
-	}
-
-	return false
 }
