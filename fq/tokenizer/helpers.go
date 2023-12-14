@@ -2,16 +2,6 @@ package tokenizer
 
 import "regexp"
 
-func existInSlice(ch rune, s []rune) bool {
-	for _, e := range s {
-		if ch == e {
-			return true
-		}
-	}
-
-	return false
-}
-
 func isLetterRune(ch rune) bool {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/nht1206/go-study/fq/list"
 )
 
 const (
@@ -47,11 +49,29 @@ type Token struct {
 }
 
 type Tokenizer struct {
+	r                    *bufio.Reader
+	nextToken            *Token
+	whiteSpaces          []rune
+	identifierStartRunes []rune
+	textStartRunes       []rune
+	operatorStartRunes   []rune
+	joinStartRunes       []rune
+	groupStartRunes      []rune
+	groupEndRunes        []rune
 	groupMap             map[rune]rune
+	Err                  error
 }
 
 func NewTokenizer(r io.Reader) *Tokenizer {
 	return &Tokenizer{
+		r:                    bufio.NewReader(r),
+		whiteSpaces:          defaultWhitespaces,
+		identifierStartRunes: defaultIdentifierStartRunes,
+		textStartRunes:       defaultTextStartRunes,
+		operatorStartRunes:   defaultOperatorStartRunes,
+		joinStartRunes:       defaultJoinStartRunes,
+		groupStartRunes:      defaultGroupStartRunes,
+		groupEndRunes:        defaultGroupEndRunes,
 		groupMap:             defaultGroupMap,
 	}
 }
@@ -333,29 +353,29 @@ func (s *Tokenizer) unread() error {
 }
 
 func (s *Tokenizer) isWhitespace(ch rune) bool {
-	return existInSlice(ch, s.whiteSpaces)
+	return list.ExistInSlice(s.whiteSpaces, ch)
 }
 
 func (s *Tokenizer) isIdentifierStart(ch rune) bool {
-	return isLetterRune(ch) || existInSlice(ch, s.identifierStart)
+	return isLetterRune(ch) || list.ExistInSlice(s.identifierStartRunes, ch)
 }
 
 func (s *Tokenizer) isTextStart(ch rune) bool {
-	return existInSlice(ch, s.textStart)
+	return list.ExistInSlice(s.textStartRunes, ch)
 }
 
 func (s *Tokenizer) isOperator(ch rune) bool {
-	return existInSlice(ch, s.operator)
+	return list.ExistInSlice(s.operatorStartRunes, ch)
 }
 
 func (s *Tokenizer) isJoin(ch rune) bool {
-	return existInSlice(ch, s.join)
+	return list.ExistInSlice(s.joinStartRunes, ch)
 }
 
 func (s *Tokenizer) isGroupStart(ch rune) bool {
-	return existInSlice(ch, s.groupStart)
+	return list.ExistInSlice(s.groupStartRunes, ch)
 }
 
 func (s *Tokenizer) isGroupEnd(ch rune) bool {
-	return existInSlice(ch, s.groupEnd)
+	return list.ExistInSlice(s.groupEndRunes, ch)
 }
