@@ -23,6 +23,10 @@ var (
 	defaultGroupEndRunes        = []rune(`)`)
 )
 
+var defaultGroupMap = map[rune]rune{
+	'(': ')',
+}
+
 type TokenType string
 
 const (
@@ -43,28 +47,12 @@ type Token struct {
 }
 
 type Tokenizer struct {
-	r               *bufio.Reader
-	nextToken       *Token
-	whiteSpaces     []rune
-	identifierStart []rune
-	textStart       []rune
-	operator        []rune
-	join            []rune
-	groupStart      []rune
-	groupEnd        []rune
-	Err             error
+	groupMap             map[rune]rune
 }
 
 func NewTokenizer(r io.Reader) *Tokenizer {
 	return &Tokenizer{
-		r:               bufio.NewReader(r),
-		whiteSpaces:     defaultWhitespaces,
-		identifierStart: defaultIdentifierStartRunes,
-		textStart:       defaultTextStartRunes,
-		operator:        defaultOperatorStartRunes,
-		join:            defaultJoinStartRunes,
-		groupStart:      defaultGroupStartRunes,
-		groupEnd:        defaultGroupEndRunes,
+		groupMap:             defaultGroupMap,
 	}
 }
 
@@ -304,9 +292,9 @@ func (s *Tokenizer) read() rune {
 func (s *Tokenizer) scanGroup() *Token {
 	var buf bytes.Buffer
 
-	// Skip the group start rune
-	s.read()
+	groupStart := s.read()
 	groupCount := 1
+	var groupEnd rune
 
 	for {
 		ch := s.read()
@@ -324,6 +312,7 @@ func (s *Tokenizer) scanGroup() *Token {
 		}
 
 		if groupCount == 0 {
+			groupEnd = ch
 			break
 		}
 
@@ -332,8 +321,8 @@ func (s *Tokenizer) scanGroup() *Token {
 
 	literal := buf.String()
 
-	if groupCount != 0 {
-		s.Err = fmt.Errorf("invalid group %q", literal)
+	if groupCount != 0 || groupEnd != s.groupMap[groupStart] {
+		s.Err = fmt.Errorf("invalid group %s%q%s", string(groupStart), literal, string(groupEnd))
 	}
 
 	return &Token{Type: TokenGroup, Literal: literal}
